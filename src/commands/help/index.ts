@@ -1,5 +1,4 @@
 import { Context } from "probot";
-
 const helpMessage = `
 Usage:
 

@@ -1,5 +1,8 @@
 import { Context } from "probot";
-
+import {
+  createOrUpdateStatus,
+  createOrUpdateNotification,
+} from "../common/issue-update";
 import { GiveUpQuery } from "../../queries/GiveUpQuery";
 
 import { IChallengeIssueService } from "../../services/challenge-issue";
@@ -68,9 +71,8 @@ const giveUp = async (
     }
   }
 
-  await context.github.issues.createComment(
-    context.issue({ body: reply.message })
-  );
+  await createOrUpdateNotification(context, reply.message, data.user.login);
+  await createOrUpdateStatus(context);
 };
 
 export default giveUp;

@@ -1,7 +1,6 @@
 import { Application, Context } from "probot";
 import { createConnection, useContainer } from "typeorm";
 import { Container } from "typedi";
-
 import pickUp from "./commands/pick-up";
 import giveUp from "./commands/give-up";
 import reward from "./commands/reward";

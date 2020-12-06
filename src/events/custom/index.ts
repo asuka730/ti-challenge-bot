@@ -1,5 +1,4 @@
 import { Context } from "probot";
-
 import { LabelQuery } from "../../queries/LabelQuery";
 
 import { Status } from "../../services/reply";

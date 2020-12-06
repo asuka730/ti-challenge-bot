@@ -1,7 +1,5 @@
 import { Context } from "probot";
-
 import AutoGiveUpService from "../../services/auto-give-up";
-
 import { AutoGiveUpQuery } from "../../queries/AutoGiveUpQuery";
 import { PICKED_LABEL } from "../../commands/labels";
 

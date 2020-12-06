@@ -1,5 +1,5 @@
 import { Context } from "probot";
-
+import { createOrUpdateNotification } from "../common/issue-update";
 import { RewardQuery } from "../../queries/RewardQuery";
 import { LabelQuery } from "../../queries/LabelQuery";
 import { Status } from "../../services/reply";
@@ -72,15 +72,15 @@ const reward = async (
   const issueNumber = findLinkedIssueNumber(data.body);
 
   if (issueNumber === null) {
-    await context.github.issues.createComment(
-      context.issue({
-        body: combineReplay({
-          data: null,
-          status: Status.Problematic,
-          message: ChallengePullMessage.CanNotFindLinkedIssue,
-          tip: ChallengePullTips.CanNotFindLinkedIssue,
-        }),
-      })
+    await createOrUpdateNotification(
+      context,
+      combineReplay({
+        data: null,
+        status: Status.Problematic,
+        message: ChallengePullMessage.CanNotFindLinkedIssue,
+        tip: ChallengePullTips.CanNotFindLinkedIssue,
+      }),
+      user.login
     );
     return;
   }
