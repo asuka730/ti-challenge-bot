@@ -2,9 +2,14 @@ import nock from "nock";
 import myProbotApp from "../../../src";
 import { Probot } from "probot";
 import {
-  createOrUpdateNotificationBody,
-  createOrUpdateStatusBody,
+  combineIssueContentWithNotification,
+  combineIssueContentWithStatus,
 } from "../../../src/commands/common/issue-update";
+import {
+  IChallengeIssueService,
+  IChallengeIssueServiceToken,
+} from "../../../src/services/challenge-issue";
+import Container, { Service } from "typedi";
 
 import typeorm = require("typeorm");
 const fs = require("fs");
@@ -13,6 +18,9 @@ const path = require("path");
 describe("Issue Update", () => {
   let probot: any;
   let mockCert: string;
+
+  const mockGiveUpMethod = jest.fn();
+  const mockPickUpMethod = jest.fn();
 
   beforeAll((done: Function) => {
     fs.readFile(
@@ -23,6 +31,20 @@ describe("Issue Update", () => {
         done();
       }
     );
+
+    // Mock the challenge-issue service.
+    @Service(IChallengeIssueServiceToken)
+    // TODO: remove the experimentalDecorators warning.
+    class MockChallengeIssueService implements IChallengeIssueService {
+      giveUp = mockGiveUpMethod.mockResolvedValue(undefined);
+      createWhenIssueOpened = jest.fn().mockResolvedValue(undefined);
+      updateWhenIssueEdited = jest.fn().mockResolvedValue(undefined);
+      removeWhenIssueUnlabeled = jest.fn().mockResolvedValue(undefined);
+      pickUp = mockPickUpMethod.mockResolvedValue(undefined);
+    }
+
+    Container.set(IChallengeIssueServiceToken, new MockChallengeIssueService());
+
   });
 
   beforeEach(() => {
@@ -43,8 +65,8 @@ describe("Issue Update", () => {
       });
   });
 
-  test("createOrUpdateNotificationBody function test", () => {
-    const case1: [string, string, string, string][] = [
+  test("combineIssueContentWithNotification function test", () => {
+    const normalCase: [string, string, string, string][] = [
       [
         "this is a message",
         `
@@ -65,7 +87,7 @@ describe("Issue Update", () => {
 `,
       ],
     ];
-    const case2: [string, string, undefined, string][] = [
+    const caseWithoutSender: [string, string, undefined, string][] = [
       [
         "this is a message",
         `
@@ -87,16 +109,16 @@ this is a message<!-- probot:Notification -->
       ],
     ];
 
-    case1.forEach((c) => {
-      expect(createOrUpdateNotificationBody(c[0], c[1], c[2])).toBe(c[3]);
+    normalCase.forEach((c) => {
+      expect(combineIssueContentWithNotification(c[0], c[1], c[2])).toBe(c[3]);
     });
-    case2.forEach((c) => {
-      expect(createOrUpdateNotificationBody(c[0], c[1], c[2])).toBe(c[3]);
+    caseWithoutSender.forEach((c) => {
+      expect(combineIssueContentWithNotification(c[0], c[1], c[2])).toBe(c[3]);
     });
   });
 
-  test("createOrUpdateStatusBody function test", () => {
-    const case1: [string, string, string, string][] = [
+  test("combineIssueContentWithStatus function test", () => {
+    const normalCase: [string, string, string, string][] = [
       [
         `
         tidb
@@ -120,7 +142,7 @@ Current Program: chanllenge1
       ],
     ];
 
-    const case2: [string, string, undefined, string][] = [
+    const CaseWithoutProgram: [string, string, undefined, string][] = [
       [
         `
         tidb
@@ -142,15 +164,20 @@ Current challenger: @asuka730
 `,
       ],
     ];
-    const case3: [string, undefined, undefined, string][] = [
-      [
-        `
+    const CaseWithoutChallengeAndProgram: [
+      string,
+      undefined,
+      undefined,
+      string
+    ][] = [
+        [
+          `
         tidb
         tikv
 `,
-        undefined,
-        undefined,
-        `
+          undefined,
+          undefined,
+          `
         tidb
         tikv
 
@@ -162,19 +189,23 @@ The challenge has not picked yet.
 <!-- probot:Status -->
 
 `,
-      ],
-    ];
+        ],
+      ];
 
-    case1.forEach((c) => {
-      expect(createOrUpdateStatusBody(c[0], c[1], c[2])).toBe(c[3]);
+    normalCase.forEach((c) => {
+      expect(combineIssueContentWithStatus(c[0], c[1], c[2])).toBe(c[3]);
     });
-    case2.forEach((c) => {
-      expect(createOrUpdateStatusBody(c[0], c[1], c[2])).toBe(c[3]);
+    CaseWithoutProgram.forEach((c) => {
+      expect(combineIssueContentWithStatus(c[0], c[1], c[2])).toBe(c[3]);
     });
-    case3.forEach((c) => {
-      expect(createOrUpdateStatusBody(c[0], c[1], c[2])).toBe(c[3]);
+    CaseWithoutChallengeAndProgram.forEach((c) => {
+      expect(combineIssueContentWithStatus(c[0], c[1], c[2])).toBe(c[3]);
     });
   });
+
+  jest.mock("../../../src/services/challenge-issue/index");
+
+
 
   afterEach(() => {
     nock.cleanAll();

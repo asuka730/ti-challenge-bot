@@ -90,7 +90,6 @@ const pickUp = async (
           sender.login
         );
         // FIXME: maybe we should pass a program instead of the title.
-
         await createOrUpdateStatus(
           context,
           sender.login,
